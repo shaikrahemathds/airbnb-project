@@ -1,13 +1,12 @@
-import pandas as pd 
 import mysql.connector
-import streamlit as st
-import plotly.express as px
+import streamlit as st 
+from streamlit_option_menu import option_menu
+import pandas as pd 
+import plotly.express as px 
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from streamlit_option_menu import option_menu
 
 
-# Setup mysql connection
 mydb = mysql.connector.connect(
     host = 'localhost',
     user = 'root',
@@ -49,7 +48,6 @@ selected = option_menu("MainMenu",
 
 if selected == 'HOME':
 
-    # CSS for consistent styling
     st.markdown("""
         <style>
             .content-box {
@@ -104,22 +102,13 @@ if selected == 'HOME':
         """, unsafe_allow_html=True)
 
     with col2:
+        st.image("image")
         st.markdown("""
         <div class="content-box">
             <h2>🔎 Project Details</h2>
             <p><b>Project Title:</b> Airbnb Analysis</p>
             <p><b>Domain:</b> Travel Industry, Property Management, and Tourism</p>
-            <p><b>Technologies:</b> Python, Pandas, MySQL, mysql-connector-python, Streamlit, and Plotly</p>
-            <p><b>Overview:</b></p>
-            <ul>
-                <li>Accessed and processed a JSON dataset containing Airbnb data from 2019</li>
-                <li>Utilized Python for data transformation, ensuring it fit into a structured DataFrame</li>
-                <li>Applied data preprocessing techniques, including cleaning and organizing, to enhance data quality and usability</li>
-                <li>Leveraged the MySQL Python connector to establish a relational database</li>
-                <li>Inserted the preprocessed data into appropriate tables within the database</li>
-                <li>Developed an interactive dashboard using Streamlit, providing users with a platform to explore insights from the dataset</li>
-                <li>Incorporated dynamic visualizations with Plotly to enrich the dashboard's analytical capabilities</li>
-            </ul>
+            <p><b>Technologies:</b> Python, Pandas, MySQL, mysql-connector-python, Streamlit, and Plotly</p>            
         </div>
         """, unsafe_allow_html=True)
 
@@ -129,40 +118,41 @@ if selected == 'HOME':
     </div>
     """, unsafe_allow_html=True)
 
+
 # ======================================= / Reusable Functions / ============================================
 
 def get_country_list():
     """Fetch the distinct countries from the database."""
-    return pd.read_sql_query('''SELECT DISTINCT country FROM listing_info''', con=mydb)
+    return pd.read_sql('''SELECT DISTINCT country FROM listing_info''', con=mydb)
 
 def get_street_list(country):
     """Fetch distinct streets for a specific country."""
-    return pd.read_sql_query('''SELECT DISTINCT street FROM listing_info WHERE country = %s''', con=mydb, params=[country])
+    return pd.read_sql('''SELECT DISTINCT street FROM listing_info WHERE country = %s''', con=mydb, params=[country])
 
 def get_hotel_list(street):
     """Fetch distinct hotel names for a specific street."""
-    return pd.read_sql_query('''SELECT DISTINCT name FROM listing_info WHERE street = %s''', con=mydb, params=[street])
+    return pd.read_sql('''SELECT DISTINCT name FROM listing_info WHERE street = %s''', con=mydb, params=[street])
 
 def get_property_details(hotel_name):
     """Fetch detailed information for a selected hotel."""
-    return pd.read_sql_query('''SELECT name, listing_url, description, country, price, picture_url, property_type, room_type, amenities,
-                        host_picture_url, host_name, host_url, host_about, host_location, accuracy_score, rating, number_of_reviews
-                        FROM listing_info
-                        JOIN host_info ON listing_info.listing_id = host_info.listing_id
-                        JOIN review_info ON listing_info.listing_id = review_info.listing_id
-                        WHERE name = %s''', con=mydb, params=[hotel_name])
+    return pd.read_sql('''SELECT name, listing_url, description, country, price, picture_url, property_type, room_type, amenities,
+                                  host_picture_url, host_name, host_url, host_about, host_location, accuracy_score, rating, number_of_reviews
+                          FROM listing_info
+                          JOIN host_info ON listing_info.listing_id = host_info.listing_id
+                          JOIN review_info ON listing_info.listing_id = review_info.listing_id
+                          WHERE name = %s''', con=mydb, params=[hotel_name])
 
 
 def get_top_comments(hotel_name):
     """Fetch top 5 comments for a selected hotel."""
-    return pd.read_sql_query('''SELECT reviewer_name, comments FROM comments_info
+    return pd.read_sql('''SELECT reviewer_name, comments FROM comments_info
                           JOIN listing_info ON comments_info.listing_id = listing_info.listing_id
                           WHERE name = %s LIMIT 5''', con=mydb, params=[hotel_name])
 
 
 def get_property_data(country):
     """fetch property data for a specific country"""
-    return pd.read_sql_query('''  
+    return pd.read_sql('''  
         SELECT name AS 'PropertyName', price, longitude, latitude, property_type, room_type,
         bed_type, cancellation_policy, minimum_nights, maximum_nights
         FROM listing_info WHERE country = %s''', con=mydb, params=[country])
@@ -187,15 +177,13 @@ def generate_map(df):
 
 if selected == 'DISCOVER':
     df_country = get_country_list()
-    selected_country = st.selectbox("Select Country", options=df_country['country'].tolist(), index=None)
+    selected_country = st.selectbox("Search destinations", options=df_country['country'].tolist(), index=None)
     st.write(' ')
 
-    # Street selection
     df_street = get_street_list(selected_country)
     selected_street = st.selectbox("Select Street", options=df_street['street'].tolist(), index=None)
     st.write(' ')
 
-    # Hotel selection
     df_hotels = get_hotel_list(selected_street)
     selected_hotel = st.selectbox('Select Hotel', options=df_hotels['name'].tolist(), index=None)
     st.write(' ')
@@ -204,10 +192,10 @@ if selected == 'DISCOVER':
         more = st.button('Click for Details')
 
         if more:
+
             df = get_property_details(selected_hotel)
             extract_detail = df.to_dict(orient='records')[0]
             c1, c2 = st.columns(2)
-            
             with c1:
                 st.write('**:green[Basic Details]**')
                 st.write("**:violet[Name :]**", f'**{extract_detail["name"]}**')
@@ -255,18 +243,18 @@ if selected == 'MapQuest':
             st.plotly_chart(fig, use_container_width=True)
 
     with tab2:
-        selected_country = st.selectbox("Select country", options= df_country['country'].tolist(), key="country_with_filters")
+        selected_country = st.selectbox("Select country", options=df_country['country'].tolist(), key="country_with_filters")
         df = get_property_data(selected_country)
 
         property_type_values = df['property_type'].unique().tolist()
         room_type_values = df['room_type'].unique().tolist()
-        
+
         col1, col2 = st.columns(2)
         with col1:
             property_type_filter = st.selectbox("Select Property Type", options=property_type_values, key="property_type_filter")
         with col2:
             room_type_filter = st.selectbox("Select Room Type", options=room_type_values, key="room_type_filter")
-        
+
         col3, col4 = st.columns(2)
         with col3:
             min_nights_filter = st.slider(
@@ -292,7 +280,7 @@ if selected == 'MapQuest':
             if property_type_filter:
                 filtered_df = filtered_df[filtered_df['property_type'] == property_type_filter]
             if room_type_filter:
-                filtered_df = filtered_df[filtered_df['room_type'] == room_type_filter]            
+                filtered_df = filtered_df[filtered_df['room_type'] == room_type_filter]
             filtered_df = filtered_df[
                 (filtered_df['minimum_nights'] >= min_nights_filter[0]) &
                 (filtered_df['minimum_nights'] <= min_nights_filter[1]) &
@@ -317,8 +305,7 @@ if selected == "INSIGHTS":
         'Additional Price analysis',
         'Listings Per Country',
         'Superhost Analysis',
-        'Top 10 Host w.r.t Number of Listings',
-        'Distribution of Room Types by Country'
+        'Top 10 Host w.r.t Number of Listings'
     ]
     
     query = st.selectbox("Choose Insight", options=options)
@@ -328,7 +315,7 @@ if selected == "INSIGHTS":
     if query == 'Frequency Distribution of Property Types':
         
         df_property = pd.read_sql('''Select property_type, count(property_type) as Frequency, avg(price) as average_price
-                                  from listing_info group by property_type order by Frequency desc''', con = mydb)
+                                    from listing_info group by property_type order by Frequency desc''', con = mydb)
 
         fig = px.bar(df_property, 
                     x='property_type', 
@@ -338,7 +325,7 @@ if selected == "INSIGHTS":
                     color='Frequency', 
                     color_continuous_scale='Rainbow')
         fig.update_layout(
-            yaxis_type="log",  
+            yaxis_type="log", 
             yaxis=dict(title='Frequency (Log Scale)'),
         )        
         st.plotly_chart(fig, use_container_width=True)
@@ -387,8 +374,8 @@ if selected == "INSIGHTS":
     if query == 'Property Type vs Room Type vs Price':
         
         df = pd.read_sql('''Select property_type, room_type, avg(price) as mean_price from listing_info
-                         group by property_type, room_type''', con = mydb)
-      
+                            group by property_type, room_type''', con = mydb)
+    
         fig = px.density_heatmap(df, 
                                 y='property_type', 
                                 x='room_type', 
@@ -400,7 +387,7 @@ if selected == "INSIGHTS":
         st.plotly_chart(fig, use_container_width=True)
         
         df=pd.read_sql('''SELECT country,room_type,count(room_type) as 'count of room type' 
-                               from listing_info GROUP by country, room_type''',con=mydb)
+                            from listing_info GROUP by country, room_type''',con=mydb)
                 
         fig = px.sunburst(df, path=['country', 'room_type'], values='count of room type',
                 title='Distribution of Room Types by Country', color_continuous_scale='RdBu')
@@ -426,17 +413,16 @@ if selected == "INSIGHTS":
     
     if query == 'Average availability Analysis':  
         
-        df=pd.read_sql_query('''SELECT country,AVG(availability_30) as 'avg_availability_30',AVG(availability_60)
-                        as 'avg_availability_60', AVG(availability_90) as 'avg_availability_90',
-                        AVG(availability_365) as 'avg_availability_365' from listing_info
-                        GROUP by country ''',con=mydb)
+        df=pd.read_sql('''SELECT country,AVG(availability_30) as 'avg_availability_30',AVG(availability_60)
+                                    as 'avg_availability_60', AVG(availability_90) as 'avg_availability_90',
+                                    AVG(availability_365) as 'avg_availability_365' from listing_info
+                                    GROUP by country ''',con=mydb)
                 
         fig = px.bar(df, x='country',
                     y=['avg_availability_30', 'avg_availability_60', 'avg_availability_90', 'avg_availability_365'],
                     title='Average Availability of Stays by Country',
                     labels={'value': 'Average Availability', 'variable': 'Availability Period', 'country': 'Country'},
                     barmode='group')
-        
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("""
@@ -451,7 +437,7 @@ if selected == "INSIGHTS":
                         - **💼 Constant occupancy** due to increased demand.
                     """)
         
-        df=pd.read_sql_query('''SELECT room_type,AVG(availability_30) as 'avg_availability_30',AVG(availability_60)  as 'avg_availability_60',
+        df=pd.read_sql('''SELECT room_type,AVG(availability_30) as 'avg_availability_30',AVG(availability_60)  as 'avg_availability_60',
                                     AVG(availability_90) as 'avg_availability_90',AVG(availability_365) as 'avg_availability_365' from listing_info
                                     GROUP by room_type ''',con=mydb)
         
@@ -459,7 +445,6 @@ if selected == "INSIGHTS":
                     title='Average Availability of Stays by Country',
                     labels={'value': 'Average Availability', 'variable': 'Availability Period', 'room_type': 'Room type'},
                     barmode='group')
-        
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("""
@@ -469,9 +454,9 @@ if selected == "INSIGHTS":
                     - The previous analysis showed **lesser adoption of shared rooms** across countries, aligning with the trend of more guests opting for private accommodations.
                     """)
         
-        df=pd.read_sql_query('''SELECT property_type,AVG(availability_30) as 'avg_availability_30',AVG(availability_60)
-                       as 'avg_availability_60', AVG(availability_90) as 'avg_availability_90',AVG(availability_365)
-                       as 'avg_availability_365' from listing_info GROUP by property_type; ''',con=mydb)
+        df=pd.read_sql('''SELECT property_type,AVG(availability_30) as 'avg_availability_30',AVG(availability_60)
+                        as 'avg_availability_60', AVG(availability_90) as 'avg_availability_90',AVG(availability_365)
+                        as 'avg_availability_365' from listing_info GROUP by property_type; ''',con=mydb)
         
         fig = make_subplots(
             rows=2, cols=2, 
@@ -555,33 +540,28 @@ if selected == "INSIGHTS":
     # -----------------------------------------------------------------------------------------------------------
     
     if query == 'Top 10 and Bottom 10 Listings':
-        
         df = pd.read_sql('''select name, price,room_type, property_type, country from listing_info order by price desc limit 10''', con = mydb)
         df_sorted = df.sort_values(by='price', ascending=False)
-        
         fig = px.bar(df, x='price', y='name', 
                  hover_name='country',
                  color='country', 
                  color_discrete_sequence=px.colors.qualitative.Pastel1)
-        
-        fig.update_layout(showlegend=False,   yaxis=dict(categoryorder='total ascending' ))
-        
+        fig.update_layout(showlegend=False,   yaxis=dict(
+            categoryorder='total ascending' 
+        ))
         st.plotly_chart(fig,use_container_width=True)
-        
         st.dataframe(df_sorted,hide_index=True)
         
         df = pd.read_sql('''select name, price,room_type, property_type, country from listing_info order by price limit 10''', con = mydb)
         df_sorted = df.sort_values(by='price', ascending=False)
-        
         fig = px.bar(df, x='price', y='name', 
                  hover_name='country',
                  color='country', 
                  color_discrete_sequence=px.colors.qualitative.Pastel1)
-        
-        fig.update_layout(showlegend=False,   yaxis=dict(categoryorder='total ascending' ))
-        
+        fig.update_layout(showlegend=False, yaxis=dict(
+            categoryorder='total ascending' 
+        ))
         st.plotly_chart(fig,use_container_width=True)
-        
         st.dataframe(df_sorted,hide_index=True)
         
         st.markdown("""
@@ -603,7 +583,6 @@ if selected == "INSIGHTS":
     # -------------------------------------------------------------------------------------------------------------
         
     if query == 'Average Price Analysis':
-        
         df = pd.read_sql("""select cancellation_policy, avg(price) as average_price from listing_info
                             group by cancellation_policy order by average_price desc""", con = mydb)
         
@@ -612,7 +591,6 @@ if selected == "INSIGHTS":
              y='cancellation_policy', 
              color='cancellation_policy', 
              orientation='h')
-        
         st.plotly_chart(fig, use_container_width=True)
         
         df = pd.read_sql("""select country, avg(price) as average_price from listing_info
@@ -623,13 +601,14 @@ if selected == "INSIGHTS":
              y='country', 
              color='country', 
              orientation='h')
-        st.plotly_chart(fig, use_container_width=True)         
+        st.plotly_chart(fig, use_container_width=True) 
+        
         
         df = pd.read_sql("SELECT name, price, amenities FROM listing_info", con = mydb)
 
-        df['amenities'] = df['amenities'].str.split(',') 
+        df['amenities'] = df['amenities'].str.split(',')  
         df_exploded = df.explode('amenities')  
-        df_exploded['amenities'] = df_exploded['amenities'].str.strip()  
+        df_exploded['amenities'] = df_exploded['amenities'].str.strip() 
 
         avg_price_by_amenity = df_exploded.groupby('amenities')['price'].mean().reset_index()
 
@@ -643,7 +622,7 @@ if selected == "INSIGHTS":
         st.plotly_chart(fig, use_container_width=True)
 
         df = pd.read_sql("""select accommodates, avg(price) as average_price from listing_info
-                        group by accommodates order by accommodates""", con = mydb)
+                            group by accommodates order by accommodates""", con = mydb)
         
         fig = px.line(df, 
                 x='accommodates', 
@@ -651,7 +630,6 @@ if selected == "INSIGHTS":
                 title="Average Price vs. Accommodates",
                 labels={"accommodates": "Number of People", "average_price": "Average Price"},
                 template="plotly")
-        
         st.plotly_chart(fig, use_container_width=True)
         
         st.markdown("""
@@ -690,8 +668,8 @@ if selected == "INSIGHTS":
                          from listing_info group by country """, con = mydb)
         
         fig = px.bar(df, 
-             x='additional_fee',
-             y='country',    
+             x='additional_fee',  
+             y='country',         
              title="Additional Price vs. Country",
              labels={"additional_fee": "Additional Fee", "country": "Country"},
              template="plotly")
@@ -704,10 +682,8 @@ if selected == "INSIGHTS":
             GROUP BY name, amenities
         """, con = mydb)
 
-        df['amenities'] = df['amenities'].str.split(',') 
-        
-        df_exploded = df.explode('amenities')
-        
+        df['amenities'] = df['amenities'].str.split(',')  
+        df_exploded = df.explode('amenities')  
         df_exploded['amenities'] = df_exploded['amenities'].str.strip() 
 
         avg_price_by_amenity = df_exploded.groupby('amenities')['additional_fee'].mean().reset_index()
@@ -741,11 +717,11 @@ if selected == "INSIGHTS":
         
     if query == 'Listings Per Country':
         df = pd.read_sql("""select country, count(name) as listing_count from listing_info
-                        group by country""", con = mydb)
+                         group by country""", con = mydb)
         fig = px.pie(
             df, 
-            names='country', 
-            values='listing_count', 
+            names='country',  
+            values='listing_count',  
             title="Listings per Country",
             labels={'listing_count': 'Number of Listings', 'country': 'Country'},
             template="plotly"
@@ -803,11 +779,11 @@ if selected == "INSIGHTS":
     if query == 'Superhost Analysis':
         
         df = pd.read_sql("""select avg(rating) as average_rating, host_is_superhost from review_info r join host_info h
-                        on r.listing_id = h.listing_id group by host_is_superhost """, con = mydb)
+                         on r.listing_id = h.listing_id group by host_is_superhost """, con = mydb)
         df['host_is_superhost'] = df['host_is_superhost'].map({0: 'Non-Superhost', 1: 'Superhost'})
         
         fig = px.bar(df, y = 'host_is_superhost', x = 'average_rating', color = 'host_is_superhost',
-                    title="Rating:  superhost vs. Non-Superhost", orientation='h')
+                     title="Rating:  superhost vs. Non-Superhost", orientation='h')
         
         st.plotly_chart(fig, use_container_width=True)
         
@@ -816,27 +792,27 @@ if selected == "INSIGHTS":
         df['host_is_superhost'] = df['host_is_superhost'].map({0: 'Non-Superhost', 1: 'Superhost'})
         
         fig = px.bar(df, y = 'host_is_superhost', x = 'avg_response_rate', color = 'host_is_superhost',
-                    title="Rating:  superhost vs. Non-Superhost", orientation='h')
+                     title="Rating:  superhost vs. Non-Superhost", orientation='h')
         
         st.plotly_chart(fig, use_container_width=True)
         
         df = pd.read_sql("""select host_response_rate, host_is_superhost, host_response_time from host_info """,
-                        con = mydb)
+                         con = mydb)
         
         df['host_is_superhost'] = df['host_is_superhost'].map({0: 'Non-Superhost', 1: 'Superhost'})
         
         df_pivot = df.pivot_table(
             values='host_response_rate', 
-            index='host_is_superhost', 
-            columns='host_response_time',
+            index='host_is_superhost',  
+            columns='host_response_time', 
             aggfunc='mean' 
         )
 
         fig = px.imshow(
-            df_pivot,  
+            df_pivot,
             title="Heatmap: Host Response Rate by Superhost and Response Time",
             labels={'host_is_superhost': 'Superhost Status', 'host_response_time': 'Response Time'},
-            color_continuous_scale='Viridis' 
+            color_continuous_scale='Viridis'  
         )
         
         st.plotly_chart(fig, use_container_width=True)
@@ -926,3 +902,4 @@ if selected == "INSIGHTS":
 
     
     # ----------------------------------------------------------------------------------------------------------
+    

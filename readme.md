@@ -58,6 +58,7 @@ Dive deep into Airbnb data trends and patterns:
 - Data Visualization 🎨  
 - Exploratory Data Analysis (EDA) 🔍  
 - Streamlit Development 🌐  
+- Power BI 
 
 ---  
 
@@ -66,6 +67,7 @@ Dive deep into Airbnb data trends and patterns:
 - **MySQL**  
 - **Streamlit**  
 - **Plotly**  
+- **Power BI**
 
 ---  
 
@@ -85,6 +87,12 @@ Dive deep into Airbnb data trends and patterns:
 ### 📊 Data Visualization and Analysis  
 - Designed an interactive **Streamlit dashboard** with engaging **Plotly charts**.  
 - Offered geospatial visualizations and insights to help users explore data trends effectively.  
+
+### 📊 Power BI Dashboard 
+- Designed an interactive **Power BI dashboard** with engaging **charts**.  
+- Offered geospatial visualizations and insights to help users explore data trends effectively.
+
+![Dashboard](airbnb_dashboard_image.PNG)
 
 ---  
 
